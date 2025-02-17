@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Task } from "../types";
 
+//my rewrite is not currently working, so I have to hardcode my url right now
 const API_URL = "http://127.0.0.1:8000/api/tasks/";  // Using the rewritten URL
 console.log("Using API URL:", API_URL);
 
@@ -50,6 +51,33 @@ export const updateTask = async (task: Task): Promise<void> => {
     }
   } catch (error) {
     console.error("Error updating task:", error);
+    throw error;
+  }
+};
+
+export const createTask = async (task: Omit<Task, 'id'>): Promise<Task> => {
+  try {
+    console.log("Creating task:", task);
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(task),
+    });
+    console.log("Create response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response:", errorText);
+      throw new Error(`Failed to create task: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log("Created task:", data);
+    return data;
+  } catch (error) {
+    console.error("Error creating task:", error);
     throw error;
   }
 };

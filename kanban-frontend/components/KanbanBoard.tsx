@@ -4,10 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { Task } from '../types';
 import { getTasks, updateTask } from '../utils/api';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import CreateTaskForm from './CreateTaskForm';
 
 const KanbanBoard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   
   // Column definitions
   const columns = {
@@ -90,6 +92,11 @@ const KanbanBoard: React.FC = () => {
     }
   };
 
+  const handleTaskCreated = (newTask: Task) => {
+    setTasks(prevTasks => [...prevTasks, newTask]);
+    setShowCreateForm(false);
+  };
+
   // Render error message if there is one
   if (error) {
     console.log('Rendering error state:', error);
@@ -104,45 +111,80 @@ const KanbanBoard: React.FC = () => {
   console.log('Rendering KanbanBoard with tasks:', tasks);
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-4">
-        {Object.entries(columns).map(([columnId, column]) => (
-          <div key={columnId} className="flex-1">
-            <h2 className="mb-4 text-xl font-bold">{column.title}</h2>
-            <Droppable droppableId={columnId}>
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="bg-gray-100 p-4 rounded-lg min-h-[500px]"
-                >
-                  {column.items.map((task, index) => (
-                    <Draggable
-                      key={task.id}
-                      draggableId={task.id.toString()}
-                      index={index}
-                    >
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="bg-white p-4 mb-2 rounded shadow"
-                        >
-                          <h3 className="font-bold">{task.title}</h3>
-                          <p>{task.description}</p>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </div>
-        ))}
+    <div className="p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex gap-6">
+          {Object.entries(columns).map(([columnId, column]) => (
+            <div key={columnId} className="flex-1 min-w-[300px]">
+              <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+                {column.title}
+              </h2>
+              <Droppable droppableId={columnId}>
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl min-h-[500px]
+                             border border-slate-200 dark:border-slate-700"
+                  >
+                    {column.items.map((task, index) => (
+                      <Draggable
+                        key={task.id}
+                        draggableId={task.id.toString()}
+                        index={index}
+                      >
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`bg-white dark:bg-slate-700 p-4 mb-3 rounded-lg shadow-sm
+                                      border border-slate-200 dark:border-slate-600
+                                      transform transition-all duration-200
+                                      ${snapshot.isDragging ? 'rotate-2 shadow-lg' : ''}
+                                      hover:shadow-md`}
+                          >
+                            <h3 className="font-medium text-slate-900 dark:text-white mb-2">
+                              {task.title}
+                            </h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-300">
+                              {task.description}
+                            </p>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </div>
+          ))}
+        </div>
+      </DragDropContext>
+      
+      <div className="fixed bottom-6 right-6">
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 
+                   rounded-full hover:bg-blue-700 transition-colors shadow-lg
+                   hover:shadow-xl focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                   flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add New Task
+        </button>
       </div>
-    </DragDropContext>
+
+      {showCreateForm && (
+        <CreateTaskForm
+          onTaskCreated={handleTaskCreated}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      )}
+    </div>
   );
 };
 
